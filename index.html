@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Jump Jing Jump</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --accent:#ff6b6b;
+    --accent2:#ffb86b;
+    --bg1:#081229;
+    --bg2:#13293d;
+    --text-color:#fff;
+    --highlight-color:#ffeb3b;
+  }
+  html,body{
+    height:100%;
+    margin:0;
+    font-family:'Oswald',sans-serif;
+    background:linear-gradient(180deg,var(--bg1),var(--bg2));
+    color: var(--text-color);
+  }
+  .wrap{
+    height:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    overflow:hidden;
+  }
+  canvas{
+    background:transparent;
+    width:100%;
+    max-width:700px;
+    height:auto;
+    aspect-ratio:3/4;
+    display:block;
+    border-radius:12px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.6);
+  }
+  #scoreDisplay{
+    position:absolute;
+    top:25px;
+    left:50%;
+    transform:translateX(-50%);
+    color:#fff;
+    font-size:120px;
+    font-weight:700;
+    text-shadow:3px 3px #000, -2px -2px #000;
+    pointer-events:none;
+    font-family:'Oswald',sans-serif;
+    letter-spacing: 2px;
+  }
+  #overlay{
+    position:fixed;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:10;
+    background:rgba(0,0,0,0.75);
+    backdrop-filter:blur(5px);
+    flex-direction:column;
+    color:var(--highlight-color);
+    padding: 15px;
+  }
+  #overlay img.logo-img{
+    width:300px;
+    height:auto;
+    border-radius:12px;
+    object-fit:cover;
+    margin-bottom:20px;
+
+  }
+  #overlay .title{
+    font-size:clamp(36px, 7vw, 64px);
+    margin-bottom:15px;
+    text-shadow:3px 3px #000;
+    color: var(--highlight-color);
+    font-weight: 700;
+    letter-spacing: 2px;
+  }
+  .overlay-description{
+    color:var(--text-color);
+    margin-bottom:12px;
+    font-size:clamp(18px, 3vw, 28px);
+    font-weight: 600;
+    text-align: center;
+  }
+  #startBtn{
+    padding:14px 32px;
+    border-radius:10px;
+    border:none;
+    background:linear-gradient(45deg, var(--accent), #e91e63);
+    color:#fff;
+    cursor:pointer;
+    font-size:clamp(28px, 5.5vw, 48px);
+    font-weight:700;
+    box-shadow:0 6px 20px rgba(0,0,0,0.6);
+    margin-top:20px;
+    font-family:'Oswald',sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  }
+  #startBtn:hover{
+    background:linear-gradient(45deg, #e91e63, #d81b60);
+    transform: translateY(-2px) scale(1.02);
+    box-shadow:0 9px 25px rgba(0,0,0,0.7);
+  }
+  #startBtn:active{
+    transform: translateY(0);
+    box-shadow:0 4px 15px rgba(0,0,0,0.4);
+  }
+
+  #bestScoreDisplayOverlay{
+    color:var(--text-color);
+    margin-top:10px;
+    font-size:clamp(20px, 3.5vw, 32px);
+    font-weight: 600;
+    text-align: center;
+    text-shadow:1px 1px #000;
+  }
+
+  #popup{
+    position:fixed;
+    left:50%;
+    top:50%;
+    transform:translate(-50%,-50%);
+    background:#fff;
+    color:#000;
+    padding:25px 35px;
+    border-radius:16px;
+    display:none;
+    z-index:20;
+    box-shadow:0 8px 30px rgba(0,0,0,0.7);
+    text-align:center;
+    font-size:clamp(18px, 3.5vw, 30px);
+    font-family:'Oswald',sans-serif;
+    line-height: 1.5;
+  }
+  #popup button{
+    margin:10px;
+    padding:10px 22px;
+    border-radius:9px;
+    border:none;
+    background:linear-gradient(45deg, #64b5f6, #2196f3);
+    color:#fff;
+    cursor:pointer;
+    font-size:clamp(15px, 2.5vw, 24px);
+    font-family:'Oswald',sans-serif;
+    font-weight: 600;
+    text-shadow: 1px 1px #000;
+    box-shadow:0 4px 10px rgba(0,0,0,0.4);
+    transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+  }
+  #popup button:hover{
+    background:linear-gradient(45deg, #2196f3, #1976d2);
+    transform: translateY(-1px);
+    box-shadow:0 5px 12px rgba(0,0,0,0.5);
+  }
+  #jumpBtn{
+    position:fixed;
+    right:25px;
+    bottom:25px;
+    padding:20px 24px;
+    border-radius:50%;
+    border:none;
+    background:linear-gradient(45deg, #ff9f43, #f57c00);
+    color:#fff;
+    font-size:clamp(32px, 6vw, 54px);
+    font-weight:bold;
+    display:none;
+    z-index:12;
+    box-shadow:0 8px 25px rgba(0,0,0,0.5);
+    cursor:pointer;
+    transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+    font-family:'Oswald',sans-serif;
+  }
+  #jumpBtn:hover{
+    background:linear-gradient(45deg, #f57c00, #e65100);
+    transform: translateY(-2px) scale(1.03);
+    box-shadow:0 10px 28px rgba(0,0,0,0.7);
+  }
+  #jumpBtn:active{
+    transform: translateY(0);
+    box-shadow:0 6px 20px rgba(0,0,0,0.4);
+  }
+  @media(max-width:768px){
+    #jumpBtn{ display:block; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <canvas id="game" width="360" height="480"></canvas>
+  <div id="scoreDisplay">0</div>
+</div>
+
+<div id="overlay">
+  <img src="assets/logo.png" alt="Logo" class="logo-img">
+  <div class="title">🎮 CSL JUMP JUMP 🎮</div>
+  <div class="overlay-description">Nhảy né chướng ngại — 1 mạng thôi!</div>
+  <div id="bestScoreDisplayOverlay" class="overlay-description"></div>
+  <button id="startBtn">BẮT ĐẦU</button>
+</div>
+
+<div id="popup"></div>
+<button id="jumpBtn">⬆</button>
+
+<script>
+const canvas = document.getElementById('game'), ctx = canvas.getContext('2d');
+const scoreDisplay = document.getElementById('scoreDisplay');
+const overlay = document.getElementById('overlay');
+const popup = document.getElementById('popup');
+const startBtn = document.getElementById('startBtn');
+const jumpBtn = document.getElementById('jumpBtn');
+const bestScoreDisplayOverlay = document.getElementById('bestScoreDisplayOverlay');
+let W = canvas.width, H = canvas.height;
+ctx.imageSmoothingEnabled = true;
+
+let running = false, frames = 0, score = 0, best = 0;
+best = parseInt(localStorage.getItem('jumpJingJumpBestScore') || '0');
+
+let obstacles = [], spawnInterval = 90, obstacleSpeed = 3, gravity = 0.6;
+
+const player = { x:60, y: H-80, w:44, h:44, vy: 0, jumpPower: 13.6, grounded: true,
+  draw(){
+    roundRect(ctx, this.x, this.y, this.w, this.h, 8, '#ff6b6b');
+    roundRect(ctx, this.x+6, this.y+12, this.w-12, this.h-14, 6, '#ffd6a5');
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(this.x+10, this.y+12, 6, 6);
+    ctx.fillRect(this.x+28, this.y+12, 6, 6);
+    ctx.fillStyle = '#333';
+    ctx.fillRect(this.x+11, this.y+13, 3, 3);
+    ctx.fillRect(this.x+29, this.y+13, 3, 3);
+  },
+  update(){
+    this.vy += gravity;
+    this.y += this.vy;
+    if(this.y + this.h >= H - 16){
+      this.y = H - 16 - this.h;
+      this.vy = 0;
+      this.grounded = true;
+    } else this.grounded = false;
+  },
+  jump(){
+    if(this.grounded && running){
+      this.vy = -this.jumpPower;
+      this.grounded = false;
+      audio.playJump();
+    }
+  }
+};
+
+const layers = [
+  { speed: 0.2, colorTop:'#07233f', colorBottom:'#0f3a5a', yOffset:0 },
+  { speed: 0.6, colorTop:'#0d4666', colorBottom:'#14678e', yOffset:30 },
+  { speed: 1.2, colorTop:'#113f5e', colorBottom:'#1b6580', yOffset:60 }
+];
+let bgOffset = 0;
+
+const audio = (() => {
+  const ctx = new (window.AudioContext || window.webkitAudioContext)();
+  function buzz(freq, type='sine', duration=0.12, vol=0.12){
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.value = vol;
+    o.connect(g); g.connect(ctx.destination);
+    const now = ctx.currentTime;
+    g.gain.cancelScheduledValues(now);
+    g.gain.setValueAtTime(0, now);
+    g.gain.linearRampToValueAtTime(vol, now + 0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+    o.start(now); o.stop(now + duration + 0.02);
+  }
+  return {
+    unlock(){ if (ctx.state === 'suspended') ctx.resume(); },
+    playJump(){ buzz(520,'sine',0.12,0.12); },
+    playPoint(){ buzz(760,'triangle',0.08,0.08); buzz(880,'sine',0.06,0.06); },
+    playCrash(){ buzz(120,'sawtooth',0.35,0.18); }
+  };
+})();
+
+function roundRect(ctx,x,y,w,h,r,fill){
+  ctx.beginPath();
+  ctx.moveTo(x+r,y);
+  ctx.arcTo(x+w,y,x+w,y+h,r);
+  ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r);
+  ctx.arcTo(x,y,x+w,y,r);
+  ctx.closePath();
+  ctx.fillStyle = fill; ctx.fill();
+}
+
+function addObstacle(){
+  const heights = [28, 40, 54, 70];
+  const h = heights[Math.floor(Math.random()*heights.length)];
+  const w = 36 + Math.floor(Math.random()*12);
+  obstacles.push({ x: W + 10, y: H - 16 - h, w, h, passed:false, color: randomColor() });
+}
+function randomColor(){
+  const choices = ['#7bd389','#69dbf3','#ffd166','#c084fc','#ffa8a8'];
+  return choices[Math.floor(Math.random()*choices.length)];
+}
+
+function loop(){
+  if(!running) return;
+  frames++;
+  bgOffset -= 0.9;
+  layers.forEach((L,i)=> L.offset = (L.offset||0) - L.speed);
+
+  player.update();
+
+  if(frames % spawnInterval === 0) addObstacle();
+  for(let i=obstacles.length-1;i>=0;i--){
+    const o = obstacles[i];
+    o.x -= obstacleSpeed;
+    if(!o.passed && o.x + o.w < player.x){
+      o.passed = true; score++; scoreDisplay.textContent = score; audio.playPoint();
+      if(score > best) {
+        best = score;
+        localStorage.setItem('jumpJingJumpBestScore', best);
+      }
+    }
+    if(o.x + o.w < -20) obstacles.splice(i,1);
+    if(rectHit(player, o)){
+      endGame();
+    }
+  }
+
+  ctx.clearRect(0,0,W,H);
+  drawBackground();
+  ctx.fillStyle = '#0a2b3a';
+  ctx.fillRect(0, H-16, W, 16);
+  obstacles.forEach(o=>{
+    roundRect(ctx, o.x, o.y, o.w, o.h, 6, o.color);
+    ctx.fillStyle = 'rgba(0,0,0,0.08)';
+    ctx.fillRect(o.x+6, o.y+6, o.w-12, o.h-10);
+  });
+  player.draw();
+
+  requestAnimationFrame(loop);
+}
+
+function drawBackground(){
+  layers.forEach((L,i)=>{
+    const off = (L.offset||0) % (W*2);
+    const g = ctx.createLinearGradient(0, L.yOffset, 0, H);
+    g.addColorStop(0, L.colorTop); g.addColorStop(1, L.colorBottom);
+    ctx.fillStyle = g;
+    ctx.fillRect(0, L.yOffset, W, H - L.yOffset - 40);
+    ctx.globalAlpha = 0.12 + i*0.05;
+    for(let x=-W; x < W*2; x += 120){
+      const cx = (x + off* (1 + i*0.4)) % (W + 200) - 80;
+      const cy = 70 + i*18;
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, 48 + i*10, 18 + i*6, 0, 0, Math.PI*2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+  });
+}
+
+function rectHit(a,b){
+  return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+}
+
+function endGame(){
+  if(!running) return;
+  running = false;
+  audio.playCrash();
+  showPopup(`💀 GAME OVER 💀<br>Bạn né được ${score} chướng ngại!<br>Thành tích cao nhất: ${best}`);
+}
+
+function showPopup(html){
+  popup.innerHTML = `
+    <div style="font-size:clamp(18px, 3.5vw, 30px);margin-bottom:10px">${html}</div>
+    <button id="replayBtn">🔄 Chơi lại</button>
+    <button id="homeBtn">🏠 Về màn hình chính</button>
+  `;
+  popup.style.display = 'block';
+  document.getElementById('replayBtn').onclick = ()=>{ restartGame(); popup.style.display='none'; };
+  document.getElementById('homeBtn').onclick = ()=>{ goHome(); popup.style.display='none'; };
+}
+
+function restartGame(){
+  obstacles = []; frames = 0; score = 0; scoreDisplay.textContent = '0';
+  player.y = H - 16 - player.h; player.vy = 0; player.grounded = true;
+  spawnInterval = Math.max(60, 90 - Math.floor(score/5)*5);
+  obstacleSpeed = 3 + Math.floor(score/10);
+  running = true; loop();
+}
+
+function goHome(){
+  obstacles = []; frames = 0; score = 0; scoreDisplay.textContent = '0';
+  player.y = H - 16 - player.h; player.vy = 0; player.grounded = true;
+  overlay.style.display = 'flex';
+  bestScoreDisplayOverlay.textContent = `Thành tích cao nhất: ${best}`;
+  popup.style.display = 'none';
+  running = false;
+}
+
+startBtn.addEventListener('click', ()=> {
+  overlay.style.display = 'none';
+  score = 0; scoreDisplay.textContent = '0'; running = true; frames = 0; obstacles = [];
+  audio.unlock();
+  loop();
+});
+document.addEventListener('keydown', (e)=> {
+  if(e.code === 'Space'){
+    if(!running){
+      if(popup.style.display === 'block') { restartGame(); popup.style.display='none'; }
+      else if(overlay.style.display !== 'none') { startBtn.click(); }
+    }
+    player.jump();
+    e.preventDefault();
+  }
+});
+canvas.addEventListener('click', ()=> player.jump());
+canvas.addEventListener('touchstart', (e)=>{ player.jump(); e.preventDefault(); }, {passive:false});
+jumpBtn.addEventListener('click', ()=> player.jump());
+document.addEventListener('visibilitychange', ()=> { if(document.hidden) running=false; });
+
+window.addEventListener('resize', ()=>{});
+
+player.y = H - 16 - player.h;
+scoreDisplay.textContent = '0';
+goHome(); // Call goHome initially to display the best score on load
+
+['click','touchstart','keydown'].forEach(evt=>{
+  window.addEventListener(evt, function unlock(){ audio.unlock(); window.removeEventListener(evt, unlock); }, {once:true});
+});
+</script>
+</body>
+</html>
